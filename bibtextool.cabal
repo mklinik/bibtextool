@@ -22,5 +22,6 @@ executable bibtextool
   build-depends:       base >=4.8 && <4.9
                      , bibtex >= 0.1.0.6
                      , parsec
+                     , regex-compat
   hs-source-dirs:      src
   default-language:    Haskell2010

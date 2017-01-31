@@ -9,6 +9,7 @@ import System.Environment (getArgs)
 import System.Console.GetOpt
 
 import Data.Char (isSpace, toLower)
+import Text.Regex
 
 data Mode
   = Prettyprint
@@ -68,11 +69,8 @@ levenshtein s t =
 -- my personal entry formatting: no line breaks in values; normalized spaces
 
 normalizeSpaces :: String -> String
-normalizeSpaces [] = []
-normalizeSpaces [c] = [c]
-normalizeSpaces (c1:c2:rest)
-  | isSpace c1 && isSpace c2 = normalizeSpaces (' ':rest)
-  | otherwise = (c1 : normalizeSpaces (c2 : rest))
+normalizeSpaces input =
+  subRegex (mkRegex "[[:space:]]+") input " "
 
 formatValue :: [Entry.FieldValue] -> String
 formatValue l = Format.hashSepList (map formatValuePart l)
