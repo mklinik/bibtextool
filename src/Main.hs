@@ -82,11 +82,11 @@ formatValuePart (Entry.Naked v) = normalizeSpaces v
 formatValuePart (Entry.Quoted v) = "{" ++ normalizeSpaces v ++ "}"
 
 myEntry :: Entry.T -> String
-myEntry (Entry.Entry entryType bibId items) =
+myEntry (Entry.Entry eType eIdentifier eFields) =
    let formatItem (name, value) =
-         "  "++map toLower name++" = "++ formatValue value ++",\n"
-   in  "@" ++ entryType ++ "{" ++ bibId ++ ",\n" ++
-       concatMap formatItem items ++
+         "  " ++ map toLower name ++ " = " ++ formatValue value ++ ",\n"
+   in  "@" ++ map toLower eType ++ "{" ++ eIdentifier ++ ",\n" ++
+       concatMap formatItem eFields ++
        "}\n\n"
 myEntry (Entry.BibString name value) =
   "@string{" ++ name ++ " = " ++ formatValue value ++ "}\n\n"
