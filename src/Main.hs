@@ -12,6 +12,7 @@ import Data.Char (isSpace, toLower)
 
 data Mode
   = Prettyprint
+  | ExtractBooktitles
   deriving (Show,Eq)
 
 data Options = Options
@@ -21,7 +22,8 @@ data Options = Options
 
 options :: [OptDescr (Options -> Options)]
 options =
-  [
+  [ Option ['b'] ["extractBooktitles"] (NoArg (\o -> o { mode = ExtractBooktitles })) "extraction mode"
+  , Option ['p'] ["prettyprint"] (NoArg (\o -> o { mode = Prettyprint })) "prettyprint all items"
   ]
 
 header :: String
@@ -29,8 +31,8 @@ header = "Usage: bibtextool <FILE>"
 
 parseOptions :: [String] -> IO Options
 parseOptions [] = ioError (userError (usageInfo header options))
-parseOptions (file:args) = case getOpt Permute options args of
-  (o,_,[]) -> do
+parseOptions args = case getOpt Permute options args of
+  (o,(file:_),[]) -> do
     return $ foldl (flip id) (Options file Prettyprint) o
   (_,_,errs) -> ioError (userError (concat errs ++ usageInfo header options))
 
@@ -46,6 +48,7 @@ main = do
     Right items ->
       case mode opts of
         Prettyprint -> prettyprint items
+        _ -> putStrLn $ show (mode opts) ++ " not implemented yet"
 
 
 prettyprint = mapM_ (putStr . myEntry)
