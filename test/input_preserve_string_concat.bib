@@ -1,0 +1,18 @@
+this tests whether string definitions and string concatenation are preserved properly
+
+@string{acm02 = "ACM BCM CCM whatever"}
+
+@article{Koblitz1987,
+  author = {Koblitz, Neal},
+  issn = {0025-5718},
+  journal = {Mathematics of Computation} #
+    {AND}
+	# "some newlines",
+  month = jan,
+  number = 177,
+  pages = {203--209},
+  title = {Elliptic Curve Cryptosystems} #    "TEST",
+  volume = 48,
+  year = 1987,
+  note = acm02 # acm02 # jan #		 {foo} #	{ACM whatever}
+}
