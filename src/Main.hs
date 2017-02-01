@@ -3,13 +3,16 @@ module Main where
 import Text.BibTeX.Parse
 import qualified Text.BibTeX.Entry as Entry
 import qualified Text.BibTeX.Format as Format
-import Text.Parsec.String
 
 import System.Environment (getArgs)
 import System.Console.GetOpt
+import System.Exit (die)
 
-import Data.Char (isSpace, toLower)
+import Text.Parsec.String
+import Data.Char (isSpace, toLower, toUpper)
 import Text.Regex
+import Data.List
+import Data.List.Utils
 
 data Mode
   = Prettyprint
@@ -49,11 +52,51 @@ main = do
     Right items ->
       case mode opts of
         Prettyprint -> prettyprint items
-        _ -> putStrLn $ show (mode opts) ++ " not implemented yet"
+        ExtractBooktitles -> extractBooktitles items
 
 
-prettyprint = mapM_ (putStr . myEntry)
+prettyprint = mapM_ (putStr . formatEntry)
 
+extractBooktitles [] = return ()
+extractBooktitles (item:items) = do
+  case item of
+    (Entry.Entry eType eIdentifier eFields) -> do
+      newItem <- mkStringEntry item
+      putStr $ formatEntry newItem
+    _ -> putStr $ formatEntry item
+  extractBooktitles items
+
+mkStringEntry :: Entry.T -> IO Entry.T
+mkStringEntry e@(Entry.Entry eType eIdentifier eFields) =
+  if eType == "inproceedings" || eType == "incollection"
+    then case lookup "booktitle" eFields of
+      Nothing -> die "inproceedings without booktitle"
+      Just [bookTitleValue@(Entry.Naked _)] -> return e
+      Just [bookTitleValue@(Entry.Quoted _)] -> do
+        putStr $ formatEntry $ Entry.BibString mangeledValue [bookTitleValue]
+        return (Entry.Entry eType eIdentifier newFields)
+        where
+          newFields = addToAL eFields "booktitle" [Entry.Naked mangeledValue]
+          mangeledValue = "booktitle" ++ mangleValue bookTitleValue
+      _ -> die "inproceedings with concatenated booktitle"
+    else return e
+
+
+-- makes identifier from value
+--   for example mangleValue "{P}roc. of {USENIX}'99" -> procOfUsenix99
+-- 1. replace all punctuation by whitespace
+-- 2. camelCase all words
+-- 3. concatenate them
+mangleValue :: Entry.FieldValue -> String
+mangleValue (Entry.Naked str) = str
+mangleValue (Entry.Quoted input) = concat camelCaseWords
+  where
+    camelCaseWords = map capitalize inputWords
+    capitalize [] = []
+    capitalize (letter:word) = toUpper letter : map toLower word
+    inputWords = words inputWithoutPunctuation
+    inputWithoutPunctuation = subRegex (mkRegex "[^[:alnum:]]") inputWithoutBraces " "
+    inputWithoutBraces = subRegex (mkRegex "[{}]") input ""
 
 -- case insensitive string similarity
 levenshtein :: String -> String -> Int
@@ -79,13 +122,13 @@ formatValuePart :: Entry.FieldValue -> String
 formatValuePart (Entry.Naked v) = normalizeSpaces v
 formatValuePart (Entry.Quoted v) = "{" ++ normalizeSpaces v ++ "}"
 
-myEntry :: Entry.T -> String
-myEntry (Entry.Entry eType eIdentifier eFields) =
+formatEntry :: Entry.T -> String
+formatEntry (Entry.Entry eType eIdentifier eFields) =
    let formatItem (name, value) =
          "  " ++ map toLower name ++ " = " ++ formatValue value ++ ",\n"
    in  "@" ++ map toLower eType ++ "{" ++ eIdentifier ++ ",\n" ++
        concatMap formatItem eFields ++
        "}\n\n"
-myEntry (Entry.BibString name value) =
+formatEntry (Entry.BibString name value) =
   "@string{" ++ name ++ " = " ++ formatValue value ++ "}\n\n"
-myEntry (Entry.Comment cmt) = cmt
+formatEntry (Entry.Comment cmt) = cmt
