@@ -13,7 +13,7 @@ $ stack install
 
 ## Finding duplicate bib entries
 
-Based on the Levensthein distance of the paper title.
+Based on the Levenshtein distance of the paper title.
 
 ```
 $ stack run -- --find-dupes ~/radboud/thesis/klinik-phd-thesis/bibliography/computer_science.bib 
