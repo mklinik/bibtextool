@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: cc34dc4d18fdf3ff048781cb853c988925814da4e989193ff64e5e93c73be7a7
+-- hash: af7f708f4cbb4dbbc118a6885f72e8a44b54860ff6fd2b769bc89c6288086c4a
 
 name:           bibtextool
 version:        0.1.0.0
@@ -31,7 +31,7 @@ executable bibtextool
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
-    , bibtex >=0.1.0.6
+    , bibtex >=0.1.0.7
     , containers
     , parsec
     , regex-compat

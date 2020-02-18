@@ -2,19 +2,22 @@ module Main where
 
 import Text.BibTeX.Parse
 import qualified Text.BibTeX.Entry as Entry
+import Text.BibTeX.Entry
 import qualified Text.BibTeX.Format as Format
 
 import System.Environment (getArgs)
 import System.Console.GetOpt
-import System.Exit (die)
 
 import Text.Parsec.String
 import Data.Char (isSpace, toLower, toUpper)
 import Text.Regex
 import Data.List
+import Data.Maybe
+import Control.Monad
 
 data Mode
   = Prettyprint
+  | FindDuplicates
   deriving (Show,Eq)
 
 data Options = Options
@@ -25,6 +28,7 @@ data Options = Options
 options :: [OptDescr (Options -> Options)]
 options =
   [ Option ['p'] ["prettyprint"] (NoArg (\o -> o { mode = Prettyprint })) "prettyprint all items"
+  , Option [] ["find-dupes"] (NoArg (\o -> o { mode = FindDuplicates })) "find and report potential duplicate, based on title entry"
   ]
 
 header :: String
@@ -49,6 +53,7 @@ main = do
     Right items ->
       case mode opts of
         Prettyprint -> prettyprint items
+        FindDuplicates -> findDuplicates items
 
 
 prettyprint = mapM_ (putStr . formatEntry)
@@ -102,5 +107,38 @@ formatEntry (Entry.Entry eType eIdentifier eFields) =
        concatMap formatItem eFields ++
        "}\n\n"
 formatEntry (Entry.BibString name value) =
-  "@string{" ++ name ++ " =\n  " ++ formatValue value ++ "}\n\n"
+  "@string{" ++ name ++ " = " ++ formatValue value ++ "}\n\n"
 formatEntry (Entry.Comment cmt) = cmt
+
+
+
+findDuplicates entries = do
+  -- all entries that have a title field
+  let
+    titledEntries =
+      [ e
+      | e@Entry.Entry{Entry.fields=fs} <- map Entry.lowerCaseFieldNames $ entries
+      , isJust $ lookup "title" fs
+      ]
+    titledEntries_ =
+      [ e { Entry.fields = ("mangledTitle", [Entry.Quoted $ mangleValue titleValue]) : fs }
+      | e@Entry.Entry{Entry.fields=fs} <- titledEntries
+      , let (Just [titleValue]) = lookup "title" fs
+      ]
+  mapM_ checkSimilarity $ combinations titledEntries_
+
+
+checkSimilarity :: (Entry.T, Entry.T) -> IO ()
+checkSimilarity (entryA@Entry{fields=fieldsA}, entryB@Entry{fields=fieldsB}) = do
+  let
+    (Just [Quoted mTitleA]) = lookup "mangledTitle" fieldsA
+    (Just [Quoted mTitleB]) = lookup "mangledTitle" fieldsB
+    distance = levenshtein mTitleA mTitleB
+  when (distance < 8) $ do
+    putStrLn $ "distance: " ++ show distance
+    putStrLn $ Entry.identifier entryA
+    putStrLn $ Entry.identifier entryB
+    putStrLn ""
+
+
+combinations list = [ (x,y) | (x:xs) <- tails list, y <- xs ]

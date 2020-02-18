@@ -22,7 +22,7 @@ dependencies:
 - parsec
 - regex-compat
 - containers
-- bibtex >= 0.1.0.6
+- bibtex >= 0.1.0.7
 
 executables:
   bibtextool:

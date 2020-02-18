@@ -41,7 +41,7 @@ packages:
 #
 extra-deps:
   - git: https://github.com/mklinik/haskell-bibtex-parser.git
-    commit: fc882e82b322aaddba9b28084cd87d6f51dec060
+    commit: 45ea967b5dce2e8369f55214978d0780c1e42ff8
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
