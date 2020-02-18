@@ -11,4 +11,4 @@ ls input*.bib |\
 
 ls output*.bib |\
   fromto 's/output/expected/' |\
-  map diff -s
+  map diff -us
