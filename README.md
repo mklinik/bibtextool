@@ -2,8 +2,18 @@
 
 Various manipulations of bibtex .bib files.
 
+## Installing
 
-## Finding duplicate bib entries, based on the Levensthein distance of the paper title
+```
+$ git clone https://github.com/mklinik/bibtextool.git
+$ cd bibtextool
+$ stack install
+```
+
+
+## Finding duplicate bib entries
+
+Based on the Levensthein distance of the paper title.
 
 ```
 $ stack run -- --find-dupes ~/radboud/thesis/klinik-phd-thesis/bibliography/computer_science.bib 
