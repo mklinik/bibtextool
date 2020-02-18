@@ -12,11 +12,9 @@ import Text.Parsec.String
 import Data.Char (isSpace, toLower, toUpper)
 import Text.Regex
 import Data.List
-import Data.List.Utils
 
 data Mode
   = Prettyprint
-  | ExtractBooktitles
   deriving (Show,Eq)
 
 data Options = Options
@@ -26,8 +24,7 @@ data Options = Options
 
 options :: [OptDescr (Options -> Options)]
 options =
-  [ Option ['b'] ["extractBooktitles"] (NoArg (\o -> o { mode = ExtractBooktitles })) "extraction mode"
-  , Option ['p'] ["prettyprint"] (NoArg (\o -> o { mode = Prettyprint })) "prettyprint all items"
+  [ Option ['p'] ["prettyprint"] (NoArg (\o -> o { mode = Prettyprint })) "prettyprint all items"
   ]
 
 header :: String
@@ -52,41 +49,9 @@ main = do
     Right items ->
       case mode opts of
         Prettyprint -> prettyprint items
-        ExtractBooktitles -> extractBooktitles items
 
 
 prettyprint = mapM_ (putStr . formatEntry)
-
-extractBooktitles [] = return ()
-extractBooktitles (item:items) = do
-  case item of
-    (Entry.Entry eType eIdentifier eFields) -> do
-      newItem <- mkStringEntry item
-      putStr $ formatEntry newItem
-    _ -> putStr $ formatEntry item
-  extractBooktitles items
-
-theFieldToExtract "inproceedings" = "booktitle"
-theFieldToExtract "incollection" = "booktitle"
-theFieldToExtract "proceedings" = "title"
-
-mkStringEntry :: Entry.T -> IO Entry.T
-mkStringEntry e@(Entry.Entry eType _ _) =
-  if eType `elem` ["inproceedings", "incollection", "proceedings"]
-    then extractString (theFieldToExtract eType) e
-    else return e
-
-extractString fieldToExtract e@(Entry.Entry eType eIdentifier eFields) =
-  case lookup fieldToExtract eFields of
-    Nothing -> die $ eIdentifier ++ ": no such field name: " ++ fieldToExtract
-    Just [fieldValue@(Entry.Naked _)] -> return e
-    Just [fieldValue@(Entry.Quoted _)] -> do
-      putStr $ formatEntry $ Entry.BibString mangeledValue [fieldValue]
-      return (Entry.Entry eType eIdentifier newFields)
-      where
-        newFields = addToAL eFields fieldToExtract [Entry.Naked mangeledValue]
-        mangeledValue = "str" ++ mangleValue fieldValue
-    _ -> die $ eIdentifier ++ ": concatenated value in: " ++ fieldToExtract
 
 
 -- makes identifier from value
