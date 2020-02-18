@@ -66,20 +66,27 @@ extractBooktitles (item:items) = do
     _ -> putStr $ formatEntry item
   extractBooktitles items
 
+theFieldToExtract "inproceedings" = "booktitle"
+theFieldToExtract "incollection" = "booktitle"
+theFieldToExtract "proceedings" = "title"
+
 mkStringEntry :: Entry.T -> IO Entry.T
-mkStringEntry e@(Entry.Entry eType eIdentifier eFields) =
-  if eType == "inproceedings" || eType == "incollection"
-    then case lookup "booktitle" eFields of
-      Nothing -> die "inproceedings without booktitle"
-      Just [bookTitleValue@(Entry.Naked _)] -> return e
-      Just [bookTitleValue@(Entry.Quoted _)] -> do
-        putStr $ formatEntry $ Entry.BibString mangeledValue [bookTitleValue]
-        return (Entry.Entry eType eIdentifier newFields)
-        where
-          newFields = addToAL eFields "booktitle" [Entry.Naked mangeledValue]
-          mangeledValue = "booktitle" ++ mangleValue bookTitleValue
-      _ -> die "inproceedings with concatenated booktitle"
+mkStringEntry e@(Entry.Entry eType _ _) =
+  if eType `elem` ["inproceedings", "incollection", "proceedings"]
+    then extractString (theFieldToExtract eType) e
     else return e
+
+extractString fieldToExtract e@(Entry.Entry eType eIdentifier eFields) =
+  case lookup fieldToExtract eFields of
+    Nothing -> die $ eIdentifier ++ ": no such field name: " ++ fieldToExtract
+    Just [fieldValue@(Entry.Naked _)] -> return e
+    Just [fieldValue@(Entry.Quoted _)] -> do
+      putStr $ formatEntry $ Entry.BibString mangeledValue [fieldValue]
+      return (Entry.Entry eType eIdentifier newFields)
+      where
+        newFields = addToAL eFields fieldToExtract [Entry.Naked mangeledValue]
+        mangeledValue = "str" ++ mangleValue fieldValue
+    _ -> die $ eIdentifier ++ ": concatenated value in: " ++ fieldToExtract
 
 
 -- makes identifier from value
@@ -130,5 +137,5 @@ formatEntry (Entry.Entry eType eIdentifier eFields) =
        concatMap formatItem eFields ++
        "}\n\n"
 formatEntry (Entry.BibString name value) =
-  "@string{" ++ name ++ " = " ++ formatValue value ++ "}\n\n"
+  "@string{" ++ name ++ " =\n  " ++ formatValue value ++ "}\n\n"
 formatEntry (Entry.Comment cmt) = cmt
