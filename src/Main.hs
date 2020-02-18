@@ -137,7 +137,9 @@ checkSimilarity (entryA@Entry{fields=fieldsA}, entryB@Entry{fields=fieldsB}) = d
   when (distance < 8) $ do
     putStrLn $ "distance: " ++ show distance
     putStrLn $ Entry.identifier entryA
+    print $ lookup "title" fieldsA
     putStrLn $ Entry.identifier entryB
+    print $ lookup "title" fieldsB
     putStrLn ""
 
 
